@@ -77,8 +77,14 @@ ALT_MARKERS = {
 def setup_fonts():
     """한글 폰트 설정 (일반 + Bold)"""
     
-    # 일반 폰트 경로
+    # 일반 폰트 경로 (나눔바른고딕2-R 우선!)
     font_paths = [
+        # 사용자 폰트 (최우선)
+        './fonts/나눔바른고딕2-R.ttf',
+        'fonts/나눔바른고딕2-R.ttf',
+        './fonts/NanumBarunGothic2-R.ttf',
+        'fonts/NanumBarunGothic2-R.ttf',
+        # 시스템 폰트
         '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
         '/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf',
         './fonts/NanumGothic.ttf',
@@ -87,6 +93,12 @@ def setup_fonts():
     
     # Bold 폰트 경로
     bold_font_paths = [
+        # 사용자 Bold 폰트 (최우선)
+        './fonts/나눔바른고딕2-B.ttf',
+        'fonts/나눔바른고딕2-B.ttf',
+        './fonts/NanumBarunGothic2-B.ttf',
+        'fonts/NanumBarunGothic2-B.ttf',
+        # 시스템 폰트
         '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf',
         '/usr/share/fonts/truetype/nanum/NanumBarunGothicBold.ttf',
         './fonts/NanumGothicBold.ttf',
