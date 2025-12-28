@@ -75,32 +75,58 @@ ALT_MARKERS = {
 # 폰트 설정
 # ============================================
 def setup_fonts():
-    """한글 폰트 설정"""
+    """한글 폰트 설정 (일반 + Bold)"""
+    
+    # 일반 폰트 경로
     font_paths = [
-        # Streamlit Cloud (packages.txt로 설치됨)
         '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
         '/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf',
-        '/usr/share/fonts/truetype/nanum/NanumMyeongjo.ttf',
-        # 로컬 폰트 폴더
         './fonts/NanumGothic.ttf',
         'fonts/NanumGothic.ttf',
-        # 기타 경로
-        '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
     ]
     
+    # Bold 폰트 경로
+    bold_font_paths = [
+        '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf',
+        '/usr/share/fonts/truetype/nanum/NanumBarunGothicBold.ttf',
+        './fonts/NanumGothicBold.ttf',
+        'fonts/NanumGothicBold.ttf',
+    ]
+    
+    font_name = 'Helvetica'
+    bold_font_name = 'Helvetica-Bold'
+    
+    # 일반 폰트 등록
     for font_path in font_paths:
         if os.path.exists(font_path):
             try:
                 pdfmetrics.registerFont(TTFont('Korean', font_path))
-                st.sidebar.success(f"✅ 폰트 로드 성공: {font_path}")
-                return 'Korean'
+                font_name = 'Korean'
+                st.sidebar.success(f"✅ 폰트 로드: {font_path}")
+                break
             except Exception as e:
-                st.sidebar.warning(f"폰트 로드 실패: {font_path} - {e}")
                 continue
     
-    st.sidebar.error("⚠️ 한글 폰트를 찾을 수 없습니다!")
-    return 'Helvetica'
+    # Bold 폰트 등록
+    for font_path in bold_font_paths:
+        if os.path.exists(font_path):
+            try:
+                pdfmetrics.registerFont(TTFont('KoreanBold', font_path))
+                bold_font_name = 'KoreanBold'
+                st.sidebar.success(f"✅ Bold 폰트 로드: {font_path}")
+                break
+            except Exception as e:
+                continue
+    
+    # Bold가 없으면 일반 폰트로 대체
+    if bold_font_name == 'Helvetica-Bold' and font_name == 'Korean':
+        try:
+            pdfmetrics.registerFont(TTFont('KoreanBold', font_paths[0]))
+            bold_font_name = 'KoreanBold'
+        except:
+            pass
+    
+    return font_name, bold_font_name
 
 # ============================================
 # DOCX 파일 읽기
@@ -160,7 +186,12 @@ def create_pdf(docx_files, images, customer_name, progress_callback=None):
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
-    font_name = setup_fonts()
+    font_name, bold_font_name = setup_fonts()
+    
+    # 폰트 크기 설정
+    TITLE_SIZE = 30      # 장제목 (제1장, 제2장...)
+    SUBTITLE_SIZE = 25   # 소제목 (1., 2., 3...)
+    BODY_SIZE = 17       # 본문
     
     # 이미지 딕셔너리 구성
     images_dict = {}
@@ -337,14 +368,23 @@ def create_pdf(docx_files, images, customer_name, progress_callback=None):
             
             # 텍스트 스타일 설정
             if "Heading" in style or re.match(r'^제\d+장', text):
-                c.setFont(font_name, 18)
-                line_height = 28
+                # 장제목: 30pt, Bold
+                c.setFont(bold_font_name, TITLE_SIZE)
+                line_height = 40
+                current_font = bold_font_name
+                current_size = TITLE_SIZE
             elif re.match(r'^\d+\.', text):  # 소제목 (1., 2., 3. 등)
-                c.setFont(font_name, 14)
-                line_height = 24
+                # 소제목: 25pt, Bold
+                c.setFont(bold_font_name, SUBTITLE_SIZE)
+                line_height = 35
+                current_font = bold_font_name
+                current_size = SUBTITLE_SIZE
             else:
-                c.setFont(font_name, 11)
-                line_height = 18
+                # 본문: 17pt
+                c.setFont(font_name, BODY_SIZE)
+                line_height = 25
+                current_font = font_name
+                current_size = BODY_SIZE
             
             # 텍스트 줄바꿈 처리
             words = text
@@ -353,7 +393,7 @@ def create_pdf(docx_files, images, customer_name, progress_callback=None):
             
             for char in words:
                 test_line = current_line + char
-                if c.stringWidth(test_line, font_name, 11) < max_width:
+                if c.stringWidth(test_line, current_font, current_size) < max_width:
                     current_line = test_line
                 else:
                     if current_line:
@@ -381,12 +421,8 @@ def create_pdf(docx_files, images, customer_name, progress_callback=None):
                     
                     y_pos = height - 80
                     
-                    if "Heading" in style or re.match(r'^제\d+장', text):
-                        c.setFont(font_name, 18)
-                    elif re.match(r'^\d+\.', text):
-                        c.setFont(font_name, 14)
-                    else:
-                        c.setFont(font_name, 11)
+                    # 현재 스타일에 맞게 폰트 재설정
+                    c.setFont(current_font, current_size)
                 
                 c.drawString(margin_left, y_pos, line)
                 y_pos -= line_height
