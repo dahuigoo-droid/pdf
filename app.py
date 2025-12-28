@@ -77,19 +77,29 @@ ALT_MARKERS = {
 def setup_fonts():
     """한글 폰트 설정"""
     font_paths = [
+        # Streamlit Cloud (packages.txt로 설치됨)
         '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
+        '/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf',
         '/usr/share/fonts/truetype/nanum/NanumMyeongjo.ttf',
+        # 로컬 폰트 폴더
+        './fonts/NanumGothic.ttf',
+        'fonts/NanumGothic.ttf',
+        # 기타 경로
         '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
     ]
     
     for font_path in font_paths:
         if os.path.exists(font_path):
             try:
                 pdfmetrics.registerFont(TTFont('Korean', font_path))
+                st.sidebar.success(f"✅ 폰트 로드 성공: {font_path}")
                 return 'Korean'
-            except:
+            except Exception as e:
+                st.sidebar.warning(f"폰트 로드 실패: {font_path} - {e}")
                 continue
     
+    st.sidebar.error("⚠️ 한글 폰트를 찾을 수 없습니다!")
     return 'Helvetica'
 
 # ============================================
