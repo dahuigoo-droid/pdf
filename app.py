@@ -51,7 +51,9 @@ def setup_fonts():
     """한글 폰트 설정"""
     
     font_paths = [
-        # 사용자 폰트
+        # 사용자 폰트 (.otf 포함!)
+        './fonts/나눔바른고딕2-R.otf',
+        'fonts/나눔바른고딕2-R.otf',
         './fonts/나눔바른고딕2-R.ttf',
         'fonts/나눔바른고딕2-R.ttf',
         './fonts/NanumGothic.ttf',
@@ -63,6 +65,11 @@ def setup_fonts():
     ]
     
     bold_paths = [
+        # Bold 폰트 (.otf 포함!)
+        './fonts/나눔바른고딕1-B.otf',
+        'fonts/나눔바른고딕1-B.otf',
+        './fonts/나눔바른고딕2-B.otf',
+        'fonts/나눔바른고딕2-B.otf',
         './fonts/나눔바른고딕2-B.ttf',
         'fonts/나눔바른고딕2-B.ttf',
         './fonts/NanumGothicBold.ttf',
