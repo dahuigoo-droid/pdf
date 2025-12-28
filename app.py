@@ -210,6 +210,50 @@ def create_pdf(docx_files, images, customer_name, progress_bar, status_text):
     # ===== 3. 본문 =====
     page_num = 3
     
+    # 이미지 매칭 테이블
+    IMAGE_MARKERS = {
+        "원국표": "01_원국표",
+        "대운표": "02_대운표",
+        "세운표": "03_세운표",
+        "월운표": "04_월운표",
+        "오행분석": "05_오행분석",
+        "오행": "05_오행분석",
+        "십성표": "06_십성표",
+        "신살표": "07_신살표",
+        "12운성표": "08_12운성표",
+        "운성표": "08_12운성표",
+        "지장간표": "09_지장간표",
+        "지장간": "09_지장간표",
+        "합충형파해표": "10_합충형파해표",
+        "합충형파해": "10_합충형파해표",
+        "궁성표": "11_궁성표",
+        "육친표": "12_육친표",
+        "납음오행표": "13_납음오행표",
+        "납음오행": "13_납음오행표",
+        "격국표": "14_격국표",
+        "공망표": "15_공망표",
+        "용신표": "16_용신표",
+    }
+    
+    def find_matching_image(text, images_dict):
+        """텍스트에 맞는 이미지 찾기"""
+        text_clean = text.replace(" ", "").lower()
+        
+        for marker, img_prefix in IMAGE_MARKERS.items():
+            if marker in text and ("해설" in text or "분석" in text):
+                # 이미지 딕셔너리에서 매칭되는 이미지 찾기
+                for img_name, img_data in list(images_dict.items()):
+                    img_name_clean = img_name.replace(" ", "").lower()
+                    # 번호나 키워드로 매칭
+                    if img_prefix.lower().replace("_", "") in img_name_clean.replace("_", ""):
+                        return img_name, img_data
+                    # 마커 키워드로 매칭
+                    if marker.lower() in img_name_clean:
+                        return img_name, img_data
+        return None, None
+    
+    used_images = set()  # 이미 사용한 이미지 추적
+    
     for idx, docx_file in enumerate(docx_files):
         progress = (step + idx / len(docx_files)) / total
         progress_bar.progress(progress)
@@ -237,6 +281,65 @@ def create_pdf(docx_files, images, customer_name, progress_bar, status_text):
         for item in content:
             text = item["text"]
             style = item["style"]
+            
+            # ★★★ 이미지 삽입 체크 ★★★
+            img_name, img_data = find_matching_image(text, table_images)
+            if img_data and img_name not in used_images:
+                # 새 페이지에 이미지 삽입
+                c.showPage()
+                page_num += 1
+                
+                if page_bg_img:
+                    try:
+                        img_buffer = io.BytesIO(page_bg_img)
+                        c.drawImage(ImageReader(img_buffer), 0, 0, width=width, height=height)
+                    except:
+                        pass
+                
+                # 이미지 삽입
+                try:
+                    img_buffer = io.BytesIO(img_data)
+                    pil_img = Image.open(img_buffer)
+                    img_w, img_h = pil_img.size
+                    
+                    # 이미지 크기 조정 (페이지에 맞게)
+                    max_w = width - 100
+                    max_h = height - 150
+                    scale = min(max_w / img_w, max_h / img_h, 1)
+                    new_w = img_w * scale
+                    new_h = img_h * scale
+                    
+                    img_buffer.seek(0)
+                    c.drawImage(
+                        ImageReader(img_buffer),
+                        (width - new_w) / 2,
+                        (height - new_h) / 2,
+                        width=new_w,
+                        height=new_h
+                    )
+                    
+                    used_images.add(img_name)
+                    st.sidebar.info(f"📊 {img_name} 삽입됨")
+                    
+                except Exception as e:
+                    st.sidebar.warning(f"이미지 삽입 실패: {e}")
+                
+                # 이미지 페이지 번호
+                c.setFont(font_name, 10)
+                c.drawString(width/2 - 10, 40, str(page_num))
+                
+                # 새 페이지 시작 (본문용)
+                c.showPage()
+                page_num += 1
+                
+                if page_bg_img:
+                    try:
+                        img_buffer = io.BytesIO(page_bg_img)
+                        c.drawImage(ImageReader(img_buffer), 0, 0, width=width, height=height)
+                    except:
+                        pass
+                
+                y = height - 80
             
             # 스타일 설정
             if "Heading" in style or re.match(r'^제\d+장', text):
